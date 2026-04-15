@@ -1,0 +1,24 @@
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             version="3.0">
+
+    <persistence-unit name="estudiantesPU" transaction-type="JTA">
+        <jta-data-source>java:/jdbc/EstudiantesDS</jta-data-source>
+
+        <class>org.eclipse.jakarta.Model.Estudiantes</class>
+
+        <properties>
+            <property name="jakarta.persistence.schema-generation.database.action" value="update"/>
+        </properties>
+    </persistence-unit>
+
+    <persistence-unit name="examenesPU" transaction-type="JTA">
+        <jta-data-source>java:/jdbc/ExamenesDS</jta-data-source>
+
+        <class>org.eclipse.jakarta.Model.Examen</class>
+
+        <properties>
+            <property name="jakarta.persistence.schema-generation.database.action" value="update"/>
+        </properties>
+    </persistence-unit>
+
+</persistence>
