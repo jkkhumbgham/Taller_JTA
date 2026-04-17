@@ -1,32 +1,32 @@
 package org.eclipse.jakarta.Util;
 
-import jakarta.annotation.Resource;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 import jakarta.ejb.Stateless;
-import jakarta.mail.Message;
-import jakarta.mail.Session;
-import jakarta.mail.Transport;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeMessage;
 
 @Stateless
 public class Correos {
-    @Resource(lookup = "java:jboss/mail/Default")
-    private Session mailSession;
+
+    private static final String QUEUE_NAME = "cola.correos";
+    private static final String RABBITMQ_HOST = "rabbitmq";
 
     public void enviarCorreo(String destinatario, String asunto, String contenido) {
-    try {
-        Message message = new MimeMessage(mailSession);
-        message.setRecipients(
-            Message.RecipientType.TO,
-            InternetAddress.parse(destinatario)
-        );
-        message.setSubject(asunto);
-        message.setText(contenido);
+        try {
+            ConnectionFactory factory = new ConnectionFactory();
+            factory.setHost(RABBITMQ_HOST);
+            factory.setPort(5672);
 
-        Transport.send(message);
+            try (Connection connection = factory.newConnection();
+                 Channel channel = connection.createChannel()) {
 
-    } catch (Exception e) {
-        e.printStackTrace();
+                channel.queueDeclare(QUEUE_NAME, true, false, false, null);
+                String mensaje = destinatario + "|" + asunto + "|" + contenido;
+                channel.basicPublish("", QUEUE_NAME, null, mensaje.getBytes("UTF-8"));
+                System.out.println("[RabbitMQ] Publicado para: " + destinatario);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
-}
 }

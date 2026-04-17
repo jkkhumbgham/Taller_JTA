@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+
+  db-estudiantes:
+    image: postgres:15
+    container_name: db-estudiantes
+    environment:
+      POSTGRES_DB: estudiantes
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    command: postgres -c max_prepared_transactions=100
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./taller2-datos/init-estudiantes:/docker-entrypoint-initdb.d
+
+  db-examenes:
+    image: postgres:15
+    container_name: db-examenes
+    environment:
+      POSTGRES_DB: examenes
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    command: postgres -c max_prepared_transactions=100
+    ports:
+      - "5434:5432"
+    volumes:
+      - ./taller2-datos/init-examenes:/docker-entrypoint-initdb.d
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  wildfly-datos:
+    build: ./taller2-datos
+    container_name: wildfly-datos
+    ports:
+      - "8081:8080"
+      - "9991:9990"
+    depends_on:
+      - db-estudiantes
+      - db-examenes
+
+  wildfly-logica:
+    build: ./taller2
+    container_name: wildfly-logica
+    ports:
+      - "8080:8080"
+      - "9990:9990"
+    depends_on:
+      - wildfly-datos
+      - rabbitmq
+
+  correo-consumer:
+    build: ./correo-consumer
+    container_name: correo-consumer
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      MAIL_HOST: smtp.gmail.com
+      MAIL_PORT: "587"
+      MAIL_USER: testingsistemas39@gmail.com   # ← CAMBIAR
+      MAIL_PASS: Testing@123         # ← CAMBIAR (App Password de Gmail)
+    depends_on:
+      rabbitmq:
+        condition: service_healthy

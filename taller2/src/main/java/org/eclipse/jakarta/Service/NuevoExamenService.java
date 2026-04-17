@@ -1,94 +1,69 @@
 package org.eclipse.jakarta.Service;
 
-import java.util.List;
+import java.io.StringReader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Map;
 
-import org.eclipse.jakarta.Model.Estudiantes;
-import org.eclipse.jakarta.Model.Examenes;
-import org.eclipse.jakarta.Model.Opcion;
-import org.eclipse.jakarta.Model.Pregunta;
-import org.eclipse.jakarta.Model.RespuestaEstudiante;
-import org.eclipse.jakarta.Model.Resultado;
-import org.eclipse.jakarta.Repository.Estudiantes_Repository;
-import org.eclipse.jakarta.Repository.Examenes_Repository;
-import org.eclipse.jakarta.Repository.Opcion_Repository;
-import org.eclipse.jakarta.Repository.Pregunta_Repository;
-import org.eclipse.jakarta.Repository.RespuestaEstudiante_Repository;
-import org.eclipse.jakarta.Repository.Resultado_Repository;
 import org.eclipse.jakarta.Util.Correos;
 
 import jakarta.ejb.EJB;
 import jakarta.ejb.Stateless;
-import jakarta.transaction.Transactional;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
 
 @Stateless
 public class NuevoExamenService {
 
-    @EJB
-    private Estudiantes_Repository estudiantesRepository;
-    @EJB
-    private Examenes_Repository examenesRepository;
-    @EJB
-    private Pregunta_Repository preguntaRepository;
-    @EJB
-    private Opcion_Repository opcionRepository;
-    @EJB
-    private RespuestaEstudiante_Repository respuestaRepository;
-    @EJB
-    private Resultado_Repository resultadoRepository;
+    private static final String DATOS_BASE_URL = "http://wildfly-datos:8080/taller2-datos/api";
+
     @EJB
     private Correos correo;
 
-    @Transactional
+    private final HttpClient httpClient = HttpClient.newHttpClient();
+
     public void entregarExamen(Long estudianteId, Long examenId, Map<Long, Long> respuestas) {
+        try {
+            // Construir JSON
+            StringBuilder respJson = new StringBuilder("{");
+            respuestas.forEach((p, o) ->
+                respJson.append("\"").append(p).append("\":").append(o).append(","));
+            if (respJson.charAt(respJson.length() - 1) == ',')
+                respJson.deleteCharAt(respJson.length() - 1);
+            respJson.append("}");
 
-        // 1. Buscar estudiante y examen
-        Estudiantes estudiante = estudiantesRepository.buscarPorId(estudianteId);
-        Examenes examen = examenesRepository.buscarPorId(examenId);
+            String body = String.format(
+                "{\"estudianteId\":%d,\"examenId\":%d,\"respuestas\":%s}",
+                estudianteId, examenId, respJson);
 
-        if (estudiante == null || examen == null) {
-            throw new IllegalArgumentException("Estudiante o examen no encontrado");
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(DATOS_BASE_URL + "/datos/entregar"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+
+            HttpResponse<String> response = httpClient.send(request,
+                HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200)
+                throw new RuntimeException("Error en capa de datos: " + response.body());
+
+            JsonReader jr = Json.createReader(new StringReader(response.body()));
+            JsonObject resultado = jr.readObject();
+
+            correo.enviarCorreo(
+                resultado.getString("correoEstudiante"),
+                "Resultado de tu examen",
+                "Hola " + resultado.getString("nombreEstudiante") +
+                ", tu nota en " + resultado.getString("materia") +
+                " fue: " + resultado.getJsonNumber("nota").doubleValue() + "/100"
+            );
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error al entregar el examen: " + e.getMessage(), e);
         }
-
-        // 2. Obtener preguntas del examen
-        List<Pregunta> preguntas = preguntaRepository.buscarPorExamen(examenId);
-
-        int correctas = 0;
-
-        // 3. Guardar cada respuesta y contar las correctas
-        for (Pregunta pregunta : preguntas) {
-            Long opcionSeleccionadaId = respuestas.get(pregunta.getId());
-            if (opcionSeleccionadaId == null) continue;
-
-            Opcion opcionSeleccionada = opcionRepository.buscarPorId(opcionSeleccionadaId);
-            if (opcionSeleccionada == null) continue;
-
-            RespuestaEstudiante respuesta = new RespuestaEstudiante();
-            respuesta.setEstudianteId(estudianteId);
-            respuesta.setPregunta(pregunta);
-            respuesta.setOpcion(opcionSeleccionada);
-            respuestaRepository.guardar(respuesta);
-
-            if (opcionSeleccionada.isEsCorrecta()) {
-                correctas++;
-            }
-        }
-
-        // 4. Calcular nota (sobre 100)
-        double nota = preguntas.isEmpty() ? 0 : ((double) correctas / preguntas.size()) * 100;
-
-        // 5. Guardar resultado
-        Resultado resultado = new Resultado();
-        resultado.setEstudianteId(estudianteId);
-        resultado.setExamenId(examenId);
-        resultado.setNota(nota);
-        resultadoRepository.guardar(resultado);
-
-        // 6. Notificar por correo
-        correo.enviarCorreo(
-            "juancamiloalbac@gmail.com",
-            "Resultado de tu examen",
-            "Hola " + estudiante.getNombre() + ", tu nota en " + examen.getMateria() + " fue: " + nota + "/100"
-        );
     }
 }

@@ -1,0 +1,14 @@
+embed-server --std-out=echo --server-config=standalone.xml
+
+# DRIVER (EN UNA SOLA LINEA)
+/subsystem=datasources/jdbc-driver=postgres:add(driver-name=postgres,driver-module-name=org.postgresql,driver-class-name=org.postgresql.Driver,driver-xa-datasource-class-name=org.postgresql.xa.PGXADataSource)
+
+# ESTUDIANTES
+/subsystem=datasources/xa-data-source=EstudiantesXADS:add(jndi-name=java:/jdbc/EstudiantesDS,driver-name=postgres,user-name=postgres,password=postgres)
+/subsystem=datasources/xa-data-source=EstudiantesXADS/xa-datasource-properties=URL:add(value=jdbc:postgresql://db-estudiantes:5432/estudiantes)
+
+# EXAMENES
+/subsystem=datasources/xa-data-source=ExamenesXADS:add(jndi-name=java:/jdbc/ExamenesDS,driver-name=postgres,user-name=postgres,password=postgres)
+/subsystem=datasources/xa-data-source=ExamenesXADS/xa-datasource-properties=URL:add(value=jdbc:postgresql://db-examenes:5432/examenes)
+
+stop-embedded-server
