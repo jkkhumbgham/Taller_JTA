@@ -4,8 +4,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -16,51 +14,22 @@ public class Resultado {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "estudiante_id")
-    private Estudiantes estudiante;
-
-    @ManyToOne
-    @JoinColumn(name = "examen_id")
-    private Examenes examen;
+    private Long estudianteId;  // antes era @ManyToOne a Estudiantes
+    private Long examenId;      // antes era @ManyToOne a Examenes
 
     private Double nota;
 
-    public Resultado(){
-        
-    }
+    public Resultado() {}
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public Long getEstudianteId() { return estudianteId; }
+    public void setEstudianteId(Long estudianteId) { this.estudianteId = estudianteId; }
 
-    public Estudiantes getEstudiante() {
-        return estudiante;
-    }
+    public Long getExamenId() { return examenId; }
+    public void setExamenId(Long examenId) { this.examenId = examenId; }
 
-    public void setEstudiante(Estudiantes estudiante) {
-        this.estudiante = estudiante;
-    }
-
-    public Examenes getExamen() {
-        return examen;
-    }
-
-    public void setExamen(Examenes examen) {
-        this.examen = examen;
-    }
-
-    public Double getNota() {
-        return nota;
-    }
-
-    public void setNota(Double nota) {
-        this.nota = nota;
-    }
-
-    
+    public Double getNota() { return nota; }
+    public void setNota(Double nota) { this.nota = nota; }
 }

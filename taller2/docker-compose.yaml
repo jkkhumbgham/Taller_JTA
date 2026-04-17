@@ -13,6 +13,8 @@ services:
       postgres -c max_prepared_transactions=100
     ports:
       - "5433:5432"
+    volumes:
+      - ./init-estudiantes:/docker-entrypoint-initdb.d
 
   db-examenes:
     image: postgres:15
@@ -25,6 +27,8 @@ services:
       postgres -c max_prepared_transactions=100
     ports:
       - "5434:5432"
+    volumes:
+      - ./init-examenes:/docker-entrypoint-initdb.d
 
   wildfly:
     build: .

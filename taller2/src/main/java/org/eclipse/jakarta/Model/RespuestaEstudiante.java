@@ -16,9 +16,7 @@ public class RespuestaEstudiante {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "estudiante_id")
-    private Estudiantes estudiante;
+    private Long estudianteId;
 
     @ManyToOne
     @JoinColumn(name = "pregunta_id")
@@ -29,7 +27,7 @@ public class RespuestaEstudiante {
     private Opcion opcion;
 
     public RespuestaEstudiante(){
-        
+
     }
 
     public Long getId() {
@@ -40,13 +38,6 @@ public class RespuestaEstudiante {
         this.id = id;
     }
 
-    public Estudiantes getEstudiante() {
-        return estudiante;
-    }
-
-    public void setEstudiante(Estudiantes estudiante) {
-        this.estudiante = estudiante;
-    }
 
     public Pregunta getPregunta() {
         return pregunta;
@@ -62,6 +53,14 @@ public class RespuestaEstudiante {
 
     public void setOpcion(Opcion opcion) {
         this.opcion = opcion;
+    }
+
+    public Long getEstudianteId() {
+        return estudianteId;
+    }
+
+    public void setEstudianteId(Long estudianteId) {
+        this.estudianteId = estudianteId;
     }
 
     

@@ -9,7 +9,7 @@ import jakarta.persistence.PersistenceContext;
 @Stateless
 public class RespuestaEstudiante_Repository {
 
-    @PersistenceContext(unitName = "estudiantesPU")
+    @PersistenceContext(unitName = "examenesPU")
     private EntityManager entityManager;
 
     public void guardar(RespuestaEstudiante respuesta) {

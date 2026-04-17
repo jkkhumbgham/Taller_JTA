@@ -64,7 +64,7 @@ public class NuevoExamenService {
             if (opcionSeleccionada == null) continue;
 
             RespuestaEstudiante respuesta = new RespuestaEstudiante();
-            respuesta.setEstudiante(estudiante);
+            respuesta.setEstudianteId(estudianteId);
             respuesta.setPregunta(pregunta);
             respuesta.setOpcion(opcionSeleccionada);
             respuestaRepository.guardar(respuesta);
@@ -79,14 +79,14 @@ public class NuevoExamenService {
 
         // 5. Guardar resultado
         Resultado resultado = new Resultado();
-        resultado.setEstudiante(estudiante);
-        resultado.setExamen(examen);
+        resultado.setEstudianteId(estudianteId);
+        resultado.setExamenId(examenId);
         resultado.setNota(nota);
         resultadoRepository.guardar(resultado);
 
         // 6. Notificar por correo
         correo.enviarCorreo(
-            estudiante.getCorreo(),
+            "juancamiloalbac@gmail.com",
             "Resultado de tu examen",
             "Hola " + estudiante.getNombre() + ", tu nota en " + examen.getMateria() + " fue: " + nota + "/100"
         );

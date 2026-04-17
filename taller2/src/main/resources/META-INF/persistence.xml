@@ -1,23 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <persistence xmlns="https://jakarta.ee/xml/ns/persistence"
-             version="3.0">
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
+                                 https://jakarta.ee/xml/ns/persistence/persistence_3_1.xsd"
+             version="3.1">
 
     <persistence-unit name="estudiantesPU" transaction-type="JTA">
         <jta-data-source>java:/jdbc/EstudiantesDS</jta-data-source>
-
         <class>org.eclipse.jakarta.Model.Estudiantes</class>
-
+        <class>org.eclipse.jakarta.Model.Resultado</class>
+        <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
-            <property name="jakarta.persistence.schema-generation.database.action" value="update"/>
+            <property name="jakarta.persistence.schema-generation.database.action" value="drop-and-create"/>
+            <property name="jakarta.persistence.schema-generation.create-source" value="metadata"/>
+            <property name="hibernate.hbm2ddl.import_files" value="import-estudiantes.sql"/>
+            <property name="hibernate.hbm2ddl.import_files_sql_extractor" value="org.hibernate.tool.schema.internal.script.MultiLineSqlScriptExtractor"/>
         </properties>
     </persistence-unit>
 
     <persistence-unit name="examenesPU" transaction-type="JTA">
         <jta-data-source>java:/jdbc/ExamenesDS</jta-data-source>
-
-        <class>org.eclipse.jakarta.Model.Examen</class>
-
+        <class>org.eclipse.jakarta.Model.Examenes</class>
+        <class>org.eclipse.jakarta.Model.Pregunta</class>
+        <class>org.eclipse.jakarta.Model.Opcion</class>
+        <class>org.eclipse.jakarta.Model.RespuestaEstudiante</class>
+        <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
-            <property name="jakarta.persistence.schema-generation.database.action" value="update"/>
+            <property name="jakarta.persistence.schema-generation.database.action" value="drop-and-create"/>
+            <property name="jakarta.persistence.schema-generation.create-source" value="metadata"/>
+            <property name="hibernate.hbm2ddl.import_files" value="import-examenes.sql"/>
+            <property name="hibernate.hbm2ddl.import_files_sql_extractor" value="org.hibernate.tool.schema.internal.script.MultiLineSqlScriptExtractor"/>
         </properties>
     </persistence-unit>
 
