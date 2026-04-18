@@ -68,7 +68,7 @@ services:
       MAIL_HOST: smtp.gmail.com
       MAIL_PORT: "587"
       MAIL_USER: testingsistemas39@gmail.com   # ← CAMBIAR
-      MAIL_PASS: Testing@123         # ← CAMBIAR (App Password de Gmail)
+      MAIL_PASS: mjqslxlfuxztkouy        # ← CAMBIAR (App Password de Gmail)
     depends_on:
       rabbitmq:
         condition: service_healthy

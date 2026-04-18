@@ -55,7 +55,7 @@ public class NuevoExamenService {
             JsonObject resultado = jr.readObject();
 
             correo.enviarCorreo(
-                resultado.getString("correoEstudiante"),
+                "juancamiloalbac@gmail.com",
                 "Resultado de tu examen",
                 "Hola " + resultado.getString("nombreEstudiante") +
                 ", tu nota en " + resultado.getString("materia") +
