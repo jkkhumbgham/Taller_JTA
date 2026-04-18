@@ -1,7 +1,4 @@
-# Taller JTA — Sistema de Exámenes en Línea
-
-Aplicación Jakarta EE distribuida en microservicios Docker. Permite a estudiantes rendir exámenes en línea y recibir su nota por correo electrónico de forma asíncrona vía RabbitMQ.
-
+# Taller JTA
 ---
 
 ## Arquitectura
@@ -26,7 +23,7 @@ Usuario
            ▼
 ┌──────────────────────┐
 │   correo-consumer    │
-│  JavaMail → SMTP     │
+│  JakartaMail → SMTP  │
 └──────────────────────┘
 ```
 
@@ -43,7 +40,7 @@ Usuario
 
 ---
 
-## Requisitos previos
+## Requisitos
 
 | Herramienta | Versión mínima | Verificar con |
 |---|---|---|
@@ -54,7 +51,7 @@ Usuario
 
 ---
 
-## Configuración inicial (solo una vez)
+## Configuración inicial
 
 ### Credenciales de correo
 
@@ -71,6 +68,9 @@ MAIL_PASS: xxxx xxxx xxxx xxxx  # ← App Password de 16 caracteres
 > 3. Busca **"Contraseñas de aplicaciones"**
 > 4. Crea una nueva → "Correo" + "Otro (nombre personalizado)"
 > 5. Copia la clave de 16 caracteres y pégala en `MAIL_PASS`
+
+
+Esto no es necesario si quiere seguir usando el correo ya configurado testingsistemas39@gmail.com
 
 ---
 
@@ -95,15 +95,12 @@ mvn clean package -DskipTests
 cd ..
 ```
 
-> En **Windows** usa `mvnw.cmd` en lugar de `./mvnw`.  
-> En **Linux/Mac**, si el script no ejecuta: `chmod +x taller2/mvnw taller2-datos/mvnw`
-
 ---
 
 ## Levantar la aplicación
 
 ```bash
-# Desde la raíz (donde está docker-compose.yaml)
+# Desde la raíz (`Taller_JTA/`)
 docker compose up --build
 ```
 
@@ -115,40 +112,28 @@ wildfly-datos   | WFLYSRV0025: WildFly ... started in ...ms
 correo-consumer | [Consumer] Escuchando cola: cola.correos
 ```
 
-Para correr en segundo plano:
-
-```bash
-docker compose up --build -d
-
-# Ver logs en tiempo real
-docker compose logs -f
-```
-
 ---
 
 ## Probar la aplicación
 
 ### Verificar que los servicios están vivos
 
-```bash
-curl http://localhost:8080/taller2/api/examen/test
-# Respuesta esperada: Funciona
-```
+usando tu navegador o Postman que es la herramienta recomendada para probar la app ejecuta http://localhost:8080/taller2/api/examen/test y deberias recibir un "Funciona"
 
 ### Entregar un examen
 
+para probar la funcionalidad clave de la app ejecuta preferiblemente en Postman http://localhost:8080/taller2/api/examen/entregar y pon en el body un JSON como:
 ```bash
-curl -X POST http://localhost:8080/taller2/api/examen/entregar \
-  -H "Content-Type: application/json" \
-  -d '{
-    "estudianteId": 1,
-    "examenId": 1,
-    "respuestas": {
-      "1": 1,
-      "2": 6
-    }
-  }'
+{
+  "estudianteId": 2,
+  "examenId": 1,
+  "respuestas": {
+    "1": 1,
+    "2": 3
+  }
+}
 ```
+Tener en cuenta que al ser estudiantes con correos falsos, para poder ver el correo edita el import-estudiantes.sql y pon el correo al que quieras que llegue en alguno de los estudiantes, recuerda que al momento de hacer la peticion el estudianteId debe coincidir con el estudiante donde pusiste la direccion de correo donde quieres recibir este
 
 **Respuesta esperada:** `Examen entregado correctamente`
 
@@ -163,9 +148,11 @@ curl -X POST http://localhost:8080/taller2/api/examen/entregar \
 
 ## Datos de prueba precargados
 
-Las bases de datos se inicializan automáticamente al levantar los contenedores.
+Las tablas se crean y los datos se insertan automáticamente cuando WildFly arranca, gracias a Hibernate (`drop-and-create`) y los archivos `import-*.sql`.
 
-**Estudiantes** (`db-estudiantes`)
+---
+
+**Estudiantes** — `db-estudiantes`
 
 | ID | Nombre | Apellido | Correo |
 |---|---|---|---|
@@ -173,107 +160,31 @@ Las bases de datos se inicializan automáticamente al levantar los contenedores.
 | 2 | María | García | maria.garcia@test.com |
 | 3 | Carlos | López | carlos.lopez@test.com |
 
-**Exámenes** (`db-examenes`)
+---
+
+**Exámenes** — `db-examenes`
 
 | ID | Nombre | Materia |
 |---|---|---|
 | 1 | Examen 1 | Historia |
 
-**Preguntas del Examen 1**
+**Preguntas**
 
-| ID | Enunciado | ID opción correcta |
+| ID | Enunciado | Examen ID |
 |---|---|---|
-| 1 | ¿En qué año llegó Colón a América? | 1 → "1492" |
-| 2 | ¿Quién fue el primer presidente de Colombia? | 6 → "Antonio Nariño" |
+| 1 | ¿En qué año llegó Colón a América? | 1 |
+| 2 | ¿Quién fue el primer presidente de Colombia? | 1 |
 
----
+**Opciones**
 
-## Interfaces de administración
-
-| Interfaz | URL | Usuario | Contraseña |
+| ID | Texto | ¿Correcta? | Pregunta ID |
 |---|---|---|---|
-| RabbitMQ Management | http://localhost:15672 | guest | guest |
-| WildFly Admin (lógica) | http://localhost:9990 | — | — |
-| WildFly Admin (datos) | http://localhost:9991 | — | — |
+| 1 | 1492 | T | 1 |
+| 2 | 1500 | F | 1 |
+| 3 | 1485 | F | 1 |
+| 4 | Simón Bolívar | F | 2 |
+| 5 | Francisco de Paula Santander | F | 2 |
+| 6 | Antonio Nariño | T | 2 |
 
 ---
 
-## Detener la aplicación
-
-```bash
-# Detener contenedores
-docker compose down
-
-# Detener Y borrar datos de las BDs (reset completo)
-docker compose down -v
-```
-
----
-
-## Estructura del repositorio
-
-```
-Taller_JTA/
-│
-├── docker-compose.yaml              ← Orquestador (configura aquí el correo)
-│
-├── taller2/                         ← Capa de LÓGICA (puerto 8080)
-│   ├── Dockerfile
-│   ├── pom.xml
-│   └── src/main/java/org/eclipse/jakarta/
-│       ├── Config/                  JAX-RS config
-│       ├── Controller/              Endpoint REST público (/api/examen)
-│       ├── DTO/                     EntregarExamenDTO
-│       ├── Service/                 NuevoExamenService
-│       └── Util/                    Correos.java → publica a RabbitMQ
-│
-├── taller2-datos/                   ← Capa de DATOS (puerto 8081)
-│   ├── Dockerfile
-│   ├── configure.cli                Datasources XA PostgreSQL
-│   ├── pom.xml
-│   ├── init-estudiantes/            SQL inicial de la BD estudiantes
-│   ├── init-examenes/               SQL inicial de la BD examenes
-│   └── src/main/java/org/eclipse/jakarta/
-│       ├── Config/                  JAX-RS config
-│       ├── Controller/              DatosController (endpoint interno)
-│       ├── Model/                   Entidades JPA
-│       └── Repository/              Repositorios JPA
-│
-└── correo-consumer/                 ← Consumer RabbitMQ + JavaMail
-    ├── Dockerfile
-    ├── pom.xml
-    └── src/main/java/org/eclipse/jakarta/consumer/
-        └── CorreoConsumer.java      Escucha cola y envía correo SMTP
-```
-
----
-
-## Solución de problemas
-
-**El correo no llega**
-- Verifica `MAIL_USER` y `MAIL_PASS` en `docker-compose.yaml`
-- `MAIL_PASS` debe ser una App Password de Gmail (16 caracteres), no tu clave normal
-- Revisa logs: `docker compose logs correo-consumer`
-
-**WildFly no arranca / error de conexión a la BD**
-- Espera 30-60 segundos; PostgreSQL puede tardar en inicializarse
-- Verifica que los puertos 5433 y 5434 no estén ocupados: `sudo lsof -i :5433`
-- Revisa logs: `docker compose logs db-estudiantes`
-
-**Error al compilar con Maven**
-- Asegúrate de usar Java 21: `java -version`
-- Verifica que el `JAVA_HOME` apunta a Java 21
-
-**RabbitMQ no conecta**
-- El consumer reintenta 10 veces con 5 segundos de espera entre intentos
-- Si falla: `docker compose restart correo-consumer`
-- Verifica la consola en http://localhost:15672
-
-**Puerto ya en uso**
-```bash
-# Linux/Mac
-sudo lsof -i :8080
-
-# Windows
-netstat -ano | findstr :8080
-```

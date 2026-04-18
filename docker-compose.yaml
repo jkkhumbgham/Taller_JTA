@@ -12,8 +12,6 @@ services:
     command: postgres -c max_prepared_transactions=100
     ports:
       - "5433:5432"
-    volumes:
-      - ./taller2-datos/init-estudiantes:/docker-entrypoint-initdb.d
 
   db-examenes:
     image: postgres:15
@@ -25,8 +23,6 @@ services:
     command: postgres -c max_prepared_transactions=100
     ports:
       - "5434:5432"
-    volumes:
-      - ./taller2-datos/init-examenes:/docker-entrypoint-initdb.d
 
   rabbitmq:
     image: rabbitmq:3-management
