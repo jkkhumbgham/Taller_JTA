@@ -1,4 +1,4 @@
-# Taller No. 2 JEE — Transacciones Distribuidas
+# Taller No. 2 — Transacciones Distribuidas
 
 Este taller implementa una solución para el manejo de transacciones distribuidas entre dos bases de datos, desacoplando la lógica de negocio del acceso a datos. Cuando un estudiante entrega un examen, el sistema persiste la información en ambas bases de datos, calcula la nota y le envía un correo electrónico con su resultado, todo de forma coordinada.
 
