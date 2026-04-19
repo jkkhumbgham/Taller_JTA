@@ -1,7 +1,12 @@
-# Taller JTA
+# Taller No. 2 JEE — Transacciones Distribuidas
+
+Este taller implementa una solución para el manejo de transacciones distribuidas entre dos bases de datos, desacoplando la lógica de negocio del acceso a datos. Cuando un estudiante entrega un examen, el sistema persiste la información en ambas bases de datos, calcula la nota y le envía un correo electrónico con su resultado, todo de forma coordinada.
+
 ---
 
-## Arquitectura
+## ¿Cómo está organizado el sistema?
+
+La aplicación se divide en seis contenedores que se comunican entre sí:
 
 ```
 Usuario
@@ -27,8 +32,6 @@ Usuario
 └──────────────────────┘
 ```
 
-### Contenedores
-
 | Contenedor | Tecnología | Puerto |
 |---|---|---|
 | `wildfly-logica` | WildFly 39 / Jakarta EE 10 | 8080 (app), 9990 (admin) |
@@ -40,9 +43,11 @@ Usuario
 
 ---
 
-## Requisitos
+## Lo que se necesita antes de empezar
 
-| Herramienta | Versión mínima | Verificar con |
+Se debe tener instaladas las siguientes herramientas:
+
+| Herramienta | Versión | ¿Cómo verificarla? |
 |---|---|---|
 | Java JDK | 21 | `java -version` |
 | Maven | 3.9+ | `mvn -version` |
@@ -55,28 +60,27 @@ Usuario
 
 ### Credenciales de correo
 
-Abre `docker-compose.yaml` en la raíz del proyecto y edita estas dos líneas:
+Antes de levantar la aplicación, el desarrollador debe editar el archivo `docker-compose.yaml` con su cuenta de Gmail:
 
 ```yaml
-MAIL_USER: tucorreo@gmail.com    # ← tu dirección Gmail
-MAIL_PASS: xxxx xxxx xxxx xxxx  # ← App Password de 16 caracteres
+MAIL_USER: tucorreo@gmail.com    # dirección Gmail del desarrollador
+MAIL_PASS: xxxx xxxx xxxx xxxx  # App Password de 16 caracteres
 ```
 
-> **¿Cómo generar una App Password de Gmail?**
-> 1. Entra a [myaccount.google.com/security](https://myaccount.google.com/security)
-> 2. Activa la **Verificación en dos pasos** si no la tienes
+> **¿Cómo se genera una App Password de Gmail?**
+> 1. El desarrollador ingresa a [myaccount.google.com/security](https://myaccount.google.com/security)
+> 2. Activa la **Verificación en dos pasos** si aún no la tiene
 > 3. Busca **"Contraseñas de aplicaciones"**
 > 4. Crea una nueva → "Correo" + "Otro (nombre personalizado)"
-> 5. Copia la clave de 16 caracteres y pégala en `MAIL_PASS`
+> 5. Copia la clave de 16 caracteres y la pega en `MAIL_PASS`
 
-
-Esto no es necesario si quiere seguir usando el correo ya configurado testingsistemas39@gmail.com
+Para el desarrollo del taller se usa la cuenta **testingsistemas39@gmail.com**.
 
 ---
 
-## Compilar los proyectos
+## Compilación de los proyectos
 
-Desde la raíz del repositorio (`Taller_JTA/`), ejecuta en orden:
+Desde la raíz del repositorio (`Taller_JTA/`), el desarrollador compila los tres módulos en orden:
 
 ```bash
 # 1. Capa de lógica
@@ -97,33 +101,41 @@ cd ..
 
 ---
 
-## Levantar la aplicación
+## Levantamiento de la aplicación
+
+Con todo compilado, se ejecuta desde la raíz del proyecto:
 
 ```bash
-# Desde la raíz (`Taller_JTA/`)
 docker compose up --build
-```
-
-La primera vez tarda unos minutos en descargar imágenes base. La app está lista cuando veas:
-
-```
-wildfly-logica  | WFLYSRV0025: WildFly ... started in ...ms
-wildfly-datos   | WFLYSRV0025: WildFly ... started in ...ms
-correo-consumer | [Consumer] Escuchando cola: cola.correos
 ```
 
 ---
 
-## Probar la aplicación
+## Cómo probar la aplicación?
 
-### Verificar que los servicios están vivos
+### Verificar que los servicios están en línea
 
-usando tu navegador o Postman que es la herramienta recomendada para probar la app ejecuta http://localhost:8080/taller2/api/examen/test y deberias recibir un "Funciona"
+Se puede abrir en el navegador o en Postman la siguiente URL:
+
+```
+http://localhost:8080/taller2/api/examen/test
+```
+
+Si todo está bien, la respuesta será simplemente: `Funciona`
+
+---
 
 ### Entregar un examen
 
-para probar la funcionalidad clave de la app ejecuta preferiblemente en Postman http://localhost:8080/taller2/api/examen/entregar y pon en el body un JSON como:
-```bash
+Para probar el flujo completo, se hace una petición `POST` a:
+
+```
+http://localhost:8080/taller2/api/examen/entregar
+```
+
+Con el siguiente cuerpo JSON:
+
+```json
 {
   "estudianteId": 2,
   "examenId": 1,
@@ -133,26 +145,25 @@ para probar la funcionalidad clave de la app ejecuta preferiblemente en Postman 
   }
 }
 ```
-Tener en cuenta que al ser estudiantes con correos falsos, para poder ver el correo edita el import-estudiantes.sql y pon el correo al que quieras que llegue en alguno de los estudiantes, recuerda que al momento de hacer la peticion el estudianteId debe coincidir con el estudiante donde pusiste la direccion de correo donde quieres recibir este
+
+> **Nota sobre el correo:** Como los estudiantes de prueba tienen correos ficticios, el desarrollador puede editar el archivo `import-estudiantes.sql` y reemplazar el correo de uno de los estudiantes por una dirección real donde quiera recibir la notificación. El `estudianteId` en la petición debe coincidir con el estudiante cuyo correo fue modificado.
 
 **Respuesta esperada:** `Examen entregado correctamente`
 
-**Flujo interno que ocurre:**
-1. `wildfly-logica` recibe el POST
-2. Llama por REST a `wildfly-datos` para persistir respuestas y calcular nota
-3. `wildfly-datos` guarda todo en PostgreSQL y devuelve la nota
+**Flujo de trabajo:**
+1. `wildfly-logica` recibe el `POST`
+2. Llama por REST a `wildfly-datos` para persistir las respuestas y calcular la nota
+3. `wildfly-datos` guarda todo en PostgreSQL y devuelve la nota obtenida
 4. `wildfly-logica` publica un mensaje en la cola `cola.correos` de RabbitMQ
-5. `correo-consumer` consume el mensaje y envía el correo al estudiante por SMTP
+5. `correo-consumer` consume el mensaje y envía el correo al estudiante vía SMTP
 
 ---
 
 ## Datos de prueba precargados
 
-Las tablas se crean y los datos se insertan automáticamente cuando WildFly arranca, gracias a Hibernate (`drop-and-create`) y los archivos `import-*.sql`.
+Las tablas se crean e inicializan automáticamente cuando WildFly arranca, gracias a Hibernate (`drop-and-create`) y los archivos `import-*.sql`. No se requiere ninguna configuración manual de base de datos.
 
----
-
-**Estudiantes** — `db-estudiantes`
+### Estudiantes — `db-estudiantes`
 
 | ID | Nombre | Apellido | Correo |
 |---|---|---|---|
@@ -162,7 +173,7 @@ Las tablas se crean y los datos se insertan automáticamente cuando WildFly arra
 
 ---
 
-**Exámenes** — `db-examenes`
+### Exámenes — `db-examenes`
 
 | ID | Nombre | Materia |
 |---|---|---|
@@ -185,6 +196,3 @@ Las tablas se crean y los datos se insertan automáticamente cuando WildFly arra
 | 4 | Simón Bolívar | F | 2 |
 | 5 | Francisco de Paula Santander | F | 2 |
 | 6 | Antonio Nariño | T | 2 |
-
----
-
